@@ -33,3 +33,19 @@ class Language(LanguageBase):
 
     class Config:
         orm_mode = True
+
+
+class UserBase(BaseModel):
+    username: str
+    password: str
+
+
+class UserCreate(UserBase):
+    pass
+
+
+class User(UserBase):
+    id: int
+
+    class Config:
+        orm_mode = True

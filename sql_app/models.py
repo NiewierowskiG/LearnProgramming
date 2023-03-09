@@ -22,3 +22,10 @@ class Language(Base):
 
     courses = relationship("Course", back_populates="language")
 
+
+class User(Base):
+    __tablename__ = "user"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String)
+    password = Column(String)

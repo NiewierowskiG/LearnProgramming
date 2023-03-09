@@ -2,10 +2,17 @@ from fastapi import Depends, FastAPI, HTTPException
 from sql_app import crud, models, schemas
 from sqlalchemy.orm import Session
 from sql_app.database import SessionLocal, engine
+from fastapi_login import LoginManager
+from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_login.exceptions import InvalidCredentialsException
 
 models.Base.metadata.create_all(bind=engine)
+SECRET = "b5e264739b0beac6f88cefe4f27a62d502cdf3a0a7c6e738"
 
 app = FastAPI()
+
+manager = LoginManager(SECRET, '/login')
+# TODO set it as a env variable
 
 
 # Dependency
@@ -16,15 +23,33 @@ def get_db():
     finally:
         db.close()
 
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
 
-
-@app.get("/hello/{name}")
-async def say_hello(name: str):
-    return {"message": f"Hello {name}"}
 models.Base.metadata.create_all(bind=engine)
+
+
+# login
+
+
+@app.post('/login')
+def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    username = data.username
+    password = data.password
+
+    db_user = crud.get_user(db, username=username)
+    if not db_user:
+        raise InvalidCredentialsException
+    elif password != db_user.password:
+        raise InvalidCredentialsException
+
+    return {'status': 'Success'}
+
+
+@app.post('/register', response_model=schemas.User)
+def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    db_user = crud.get_user(db, username=user.username)
+    if db_user:
+        raise HTTPException(status_code=400, detail="Language with that name exists")
+    return crud.create_user(db, user=user)
 
 
 # Languages
