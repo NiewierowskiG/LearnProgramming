@@ -5,13 +5,27 @@ from sql_app.database import SessionLocal, engine
 from fastapi_login import LoginManager
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_login.exceptions import InvalidCredentialsException
+from fastapi.middleware.cors import CORSMiddleware
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:8080",
+]
 
 models.Base.metadata.create_all(bind=engine)
 SECRET = "b5e264739b0beac6f88cefe4f27a62d502cdf3a0a7c6e738"
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 manager = LoginManager(SECRET, '/login')
+
 # TODO set it as a env variable
 
 
@@ -41,7 +55,10 @@ def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     elif password != db_user.password:
         raise InvalidCredentialsException
 
-    return {'status': 'Success'}
+    access_token = manager.create_access_token(
+        data={'sub': username}
+    )
+    return {'access_token': access_token}
 
 
 @app.post('/register', response_model=schemas.User)
