@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 
 from pydantic import BaseModel
 
@@ -38,6 +38,7 @@ class Language(LanguageBase):
 class UserBase(BaseModel):
     username: str
     password: str
+    email: str
 
 
 class UserCreate(UserBase):
@@ -45,6 +46,23 @@ class UserCreate(UserBase):
 
 
 class User(UserBase):
+    id: int
+    activated: Optional[bool] = False
+
+    class Config:
+        orm_mode = True
+
+
+class UserPasswordReminderBase(BaseModel):
+    email: str
+    code: str
+
+
+class UserPasswordReminderCreate(UserPasswordReminderBase):
+    pass
+
+
+class UserPasswordReminder(UserPasswordReminderBase):
     id: int
 
     class Config:

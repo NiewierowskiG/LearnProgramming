@@ -56,10 +56,29 @@ def get_user(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
 
+def get_user_email(db: Session, email: str):
+    return db.query(models.User).filter(models.User.email == email).first()
+
+
 def create_user(db: Session, user: schemas.UserCreate):
     db_user = models.User(**user.dict())
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
     return db_user
+
+
+def password_reminder_get(db: Session, code: str):
+    return db.query(models.UserPasswordReminder).filter(models.UserPasswordReminder.code == code).first()
+
+
+def create_user_password_code(db: Session, password_reminder: schemas.UserPasswordReminderCreate):
+    code_duplicate = password_reminder_get(db, password_reminder.email)
+    if code_duplicate:
+        code_duplicate.remove()
+    db_password_user = models.UserPasswordReminder(**password_reminder.dict())
+    db.add(db_password_user)
+    db.commit()
+    db.refresh(db_password_user)
+    return db_password_user
 

@@ -6,6 +6,8 @@ from fastapi_login import LoginManager
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi_login.exceptions import InvalidCredentialsException
 from fastapi.middleware.cors import CORSMiddleware
+import random
+
 origins = [
     "http://localhost",
     "http://localhost:3000",
@@ -25,6 +27,7 @@ app.add_middleware(
 )
 
 manager = LoginManager(SECRET, '/login')
+
 
 # TODO set it as a env variable
 
@@ -61,14 +64,29 @@ def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
     return {'access_token': access_token}
 
 
-@app.post('/register', response_model=schemas.User)
+@app.post('/register', response_model=str)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user(db, username=user.username)
     if db_user:
         raise HTTPException(status_code=400, detail="Language with that name exists")
-    return crud.create_user(db, user=user)
+    crud.create_user(db, user=user)
+    code = ''.join((random.choice('abcdxyzpqr') for i in range(5)))
+    code_res = crud.create_user_password_code(db, password_reminder=schemas.UserPasswordReminderCreate.parse_obj(
+        {'email': user.email,
+         'code': code}))
+    return code
 
 
+@app.post('/activate', response_model=schemas.User)
+def activate(code: str, db: Session = Depends(get_db)):
+    db_code = crud.password_reminder_get(db, code)
+    if not db_code:
+        raise HTTPException(status_code=400, detail="Bad Code")
+    db_user = crud.get_user_email(db, db_code.email)
+    db_user.activated = True
+    db.commit()
+    db.refresh(db_user)
+    return db_user
 # Languages
 
 
@@ -102,7 +120,7 @@ def get_language_name(name: str, db: Session = Depends(get_db)):
     return language
 
 
-#Courses
+# Courses
 
 
 @app.post('/course/{language_id}', response_model=schemas.Course)

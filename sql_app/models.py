@@ -29,3 +29,13 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String)
     password = Column(String)
+    email = Column(String)
+    activated = Column(Boolean, default=False)
+
+
+class UserPasswordReminder(Base):
+    __tablename__ = "userpasswordreminder"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String)
+    code = Column(String)
