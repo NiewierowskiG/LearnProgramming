@@ -57,7 +57,8 @@ def login(data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get
         raise InvalidCredentialsException
     elif password != db_user.password:
         raise InvalidCredentialsException
-
+    if not db_user.activated:
+        raise InvalidCredentialsException
     access_token = manager.create_access_token(
         data={'sub': username}
     )
